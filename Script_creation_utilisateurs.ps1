@@ -19,11 +19,25 @@ Write-Host ""
 
 foreach ($user in $usersList)
 {
-    Write-Host -NoNewline "creation de l'utilisateur: "; Write-Host -NoNewline -ForegroundColor Cyan $user.DisplayName; Write-Host -NoNewline " avec le mot de passe "; Write-Host -ForegroundColor Green $user.Password
+    $OnlineUser=Get-MsolUser -UserPrincipalName $user.UserPrincipalName
+    if ($OnlineUser -eq $null)
+    {
+#User doesn't exist online, creating
+        Write-Host -NoNewline "creation de l'utilisateur: "; Write-Host -NoNewline -ForegroundColor Cyan $user.DisplayName; Write-Host -NoNewline " avec le mot de passe "; Write-Host -ForegroundColor Green $user.Password
 #Creating user
-    New-MsolUser -DisplayName $user.DisplayName -FirstName $user.FirstName -LastName $user.LastName -UserPrincipalName $user.UserPrincipalName -UsageLocation "Fr" -Password $user.Password
+        New-MsolUser -DisplayName $user.DisplayName -FirstName $user.FirstName -LastName $user.LastName -UserPrincipalName $user.UserPrincipalName -UsageLocation "Fr" -Password $user.Password
 #Assigning license to user
-    Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses $MSOLSKUid
+        Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses $MSOLSKUid
 #Setting user password without forced change
-    Set-MsolUserPassword -UserPrincipalName $user.UserPrincipalName -ForceChangePassword $false -NewPassword $user.Password 
+        Set-MsolUserPassword -UserPrincipalName $user.UserPrincipalName -ForceChangePassword $false -NewPassword $user.Password 
+    }
+    elseif ($OnlineUser -ne $null)
+    {
+#Utilisateur exists Online, configuring
+        Write-Host -NoNewline "L'utilisateur: "; Write-Host -NoNewline -ForegroundColor Cyan $user.DisplayName; Write-Host -NoNewline " existe deja, configuration de la license et du mot de passe "; Write-Host -ForegroundColor Green $user.Password
+#Assigning license to user
+        Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses $MSOLSKUid
+#Setting user password without forced change
+        Set-MsolUserPassword -UserPrincipalName $user.UserPrincipalName -ForceChangePassword $false -NewPassword $user.Password         
+    }
 }
